@@ -78,6 +78,8 @@ MESSAGE_SUCCESS_UNMUTE = ("You will recieve notifications now!")
 MESSAGE_NO_CHANNELS = ("You have not signed for "
                        "any channels yet. Try "
                        "/update")
+MESSAGE_NO_LIVE = ("There are no live channels right now."
+                   " Check back later!")
 MESSAGE_LIST_CHANNELS = ("Your subscribed channels "
                          "are:\n%s")
 

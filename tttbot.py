@@ -544,6 +544,10 @@ def live(bot, update, chat_data):
     chat_data["live_channels"] = sorted([channel for channel
                      in channels if tw.ch_table[channel]])
 
+    if len(chat_data["live_channels"]) == 0:
+        bot.send_message(chat_id = update.message.chat_id,
+                         text = MESSAGE_NO_LIVE)
+
     chat_data["live_id"] = 0
     text = TWITCH_LINK % chat_data["live_channels"][0]
 
