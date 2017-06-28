@@ -1093,6 +1093,12 @@ if (__name__ == "__main__"):
                                   pass_chat_data = True)
     dispatcher.add_handler(live_handler)
 
+    mute_handler = CommandHandler('mute', mute)
+    dispatcher.add_handler(mute_handler)
+
+    unmute_handler = CommandHandler('unmute', unmute)
+    dispatcher.add_handler(unmute_handler)
+
     uk_handler = MessageHandler(Filters.command,
                                 unknown)
     dispatcher.add_handler(uk_handler)
