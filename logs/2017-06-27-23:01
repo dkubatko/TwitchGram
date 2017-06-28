@@ -1,0 +1,14 @@
+2017-06-27 23:01:21,884 - root - INFO - Loading data from db...
+2017-06-27 23:01:21,886 - root - INFO - Done.
+2017-06-27 23:01:21,886 - root - INFO - Starting setup...
+2017-06-27 23:01:21,886 - root - INFO - Setting up channel list
+2017-06-27 23:01:21,886 - root - INFO - Done.
+2017-06-27 23:01:21,886 - root - INFO - Updating info for channels
+2017-06-27 23:01:22,776 - root - INFO - Done.
+2017-06-27 23:15:48,789 - root - INFO - * * * * * * * * * * * * * * * * 
+2017-06-27 23:15:48,790 - root - INFO - Ticks: 79
+2017-06-27 23:15:48,790 - root - INFO - Time up: 869.514739275
+2017-06-27 23:15:48,790 - root - INFO - AVG Tick Time: 1.00651568703
+2017-06-27 23:15:48,791 - root - INFO - AVG Sort Time: 1.80006027222e-05
+2017-06-27 23:15:48,791 - root - INFO - Sorts #: 2
+2017-06-27 23:15:48,791 - root - INFO - Users added: 2
