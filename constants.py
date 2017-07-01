@@ -34,6 +34,10 @@ LOGGING_IMPORT_USER = ("Imported info in chat %s"
                        " for user %s")
 LOGGING_LOADING_DB = ("Loading data from db...")
 
+LOGGING_LIVE = ("%s went live")
+LOGGING_OFFLINE = ("%s went offline")
+LOGGING_ONLINE = ("%s still online")
+
 # - # TWITCH # - #
 TWITCH_LINK = "twitch.tv/%s"
 
@@ -44,8 +48,10 @@ TWAPI_STREAM = "https://api.twitch.tv/kraken/streams/"
 TWAPI_STREAMS = "https://api.twitch.tv/kraken/streams/?limit=100&channel="
 TWAPI_CHANNEL = "https://api.twitch.tv/kraken/channels/"
 
-TW_CHUNK_SIZE = 100
+TW_CHUNK_SIZE = 20
 TW_UPDATE_DELAY = 10
+
+TW_LIVE = '\xF0\x9F\x94\xB4'
 
 # - # ACCOUNTS # - #
 UNPRIME_IMPORT_COUNT = 10

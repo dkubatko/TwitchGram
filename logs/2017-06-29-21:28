@@ -1,0 +1,8 @@
+2017-06-29 21:28:29,889 - root - INFO - Loading data from db...
+2017-06-29 21:28:29,891 - root - INFO - Done.
+2017-06-29 21:28:29,891 - root - INFO - Starting setup...
+2017-06-29 21:28:29,891 - root - INFO - Setting up channel list
+2017-06-29 21:28:29,892 - root - INFO - Done.
+2017-06-29 21:28:29,892 - root - INFO - Updating info for channels
+2017-06-29 21:28:34,180 - root - INFO - Done.
+2017-06-29 21:28:45,512 - telegram.ext.updater - WARNING - Exiting immediately!

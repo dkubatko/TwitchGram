@@ -5,6 +5,8 @@ from __future__ import division
 from telegram.ext import (Updater, CommandHandler,
                         ConversationHandler, MessageHandler,
                         CallbackQueryHandler, Filters)
+from telegram.error import (TelegramError, Unauthorized, BadRequest,
+                            TimedOut, ChatMigrated, NetworkError)
 from telegram.bot import Bot
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import random
@@ -16,10 +18,11 @@ import classUser as ClUs
 from twitchClass import Twitch
 import redis
 
-#parse lang arg
+#parse args
 import argparse
 parser = argparse.ArgumentParser(description='TwitchGram bot')
 parser.add_argument("--lang", help="language flag. ru/en", type=str)
+parser.add_argument("--delay", help="delay between updates", type=int)
 args = parser.parse_args()
 
 if args.lang == 'ru':
@@ -28,6 +31,9 @@ elif args.lang == 'en':
     from locale_en import *
 else:
     from locale_en import *
+
+if args.delay != None:
+    TW_UPDATE_DELAY = args.delay
 
 def init():
     """
@@ -78,9 +84,26 @@ def load_data(db):
         #handle empty channel
         if "" in channels:
             channels.remove("")
+        #make all channels lower
+        map(str.lower, channels)
         usr = ClUs.user(chat_id, channels = channels)
         ClUs.user.add(usr)
     logging.info(LOGGING_DONE)
+
+#error catching
+def error_callback(bot, update, error):
+    try:
+        raise error
+    except Unauthorized:
+        print "Unauthorized"
+    except BadRequest:
+        print "Bad Request"
+    except TimedOut:
+        print "Timed Out"
+    except NetworkError:
+        print "Network Error"
+    except TelegramError:
+        print "Error"
 
 # TELEGRAM HANDLER FUNCTIONS #
 
@@ -287,13 +310,12 @@ def remove_all(bot, update, chat_data):
 
     chat_data["rem_channels"] = cur_user.get_channels()
 
+    global tw
     #remove all from user's preferences
     for channel in cur_user.get_channels():
       cur_user.remove(channel)
-
-    #remove from tracking list
-    global tw
-    tw.remove_channel(channel)
+      #remove from tracking list
+      tw.remove_channel(channel)
 
     #remove from database
     global db
@@ -462,7 +484,7 @@ def ch_info(bot, update, args, chat_data):
                                        callback_data = "stats")]]
 
     if (tw.is_online(channel)):
-        info_keys.append([InlineKeyboardButton("Live", callback_data = "live")])
+        info_keys.append([InlineKeyboardButton(TW_LIVE + " Live", callback_data = "live")])
     else:
         info_keys.append([InlineKeyboardButton("Offline", callback_data = "none")])
 
@@ -542,7 +564,7 @@ def live(bot, update, chat_data):
         return
 
     chat_data["live_channels"] = sorted([channel for channel
-                     in channels if tw.ch_table[channel]])
+                     in channels if tw.ch_table[channel] == True])
 
     if len(chat_data["live_channels"]) == 0:
         bot.send_message(chat_id = update.message.chat_id,
@@ -602,8 +624,6 @@ def unmute(bot, update):
     bot.send_message(chat_id =
                      update.message.chat_id,
                      text = MESSAGE_SUCCESS_UNMUTE)
-
-
 
 def unknown(bot, update):
     '''
@@ -1053,6 +1073,8 @@ if (__name__ == "__main__"):
     #setup updater and dispatcher
     updater = Updater(token = TELEGRAM_TOKEN)
     dispatcher = updater.dispatcher
+
+    dispatcher.add_error_handler(error_callback)
 
     fm_handler = MessageHandler(Filters.text, message)
     dispatcher.add_handler(fm_handler)

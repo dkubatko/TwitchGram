@@ -66,8 +66,19 @@ class user:
             print us.channels
 
     @classmethod
+    def remove_user(cls, user):
+        cls.Users.remove(user)
+
+    @classmethod
     def notify(cls, channel):
         for usr in cls.Users:
             if channel in usr.channels and usr.track:
-                tttbot.notify_live(usr.chat_id, channel,
+                try:
+                    tttbot.notify_live(usr.chat_id, channel,
                                    cls.bot)
+                except Exception as e:
+                    logging.info(str(e))
+                    us = ClUs.user.get_by_id(update.message.chat_id)
+                    if us != None:
+                        ClUs.user.remove_user(us)
+
