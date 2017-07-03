@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import tttbot
 import time
+import logging
 
 class user:
     Users = []
@@ -78,7 +79,7 @@ class user:
                                    cls.bot)
                 except Exception as e:
                     logging.info(str(e))
-                    us = ClUs.user.get_by_id(update.message.chat_id)
+                    us = cls.get_by_id(update.message.chat_id)
                     if us != None:
-                        ClUs.user.remove_user(us)
+                        cls.remove_user(us)
 

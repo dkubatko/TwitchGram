@@ -319,7 +319,7 @@ def remove_all(bot, update, chat_data):
 
     #remove from database
     global db
-    for channel in chat_data["channels"]:
+    for channel in chat_data["rem_channels"]:
       db.srem("chat_id:" + str(cur_user.chat_id),
               channel)
 
@@ -372,7 +372,7 @@ def list_ch(bot, update):
                          update.message.chat_id,
                          text = MESSAGE_LIST_CHANNELS % s)
 
-def import_st(bot, update, args):
+def import_st(bot, update, args, chat_data):
     '''
     imports user's follows from twitch
     fallbacks:
@@ -411,33 +411,41 @@ def import_st(bot, update, args):
                          text = MESSAGE_LOADING)
 
     channels = tw.import_data(username)
+    usr_chs = cur_user.get_channels()
 
-    count = UNPRIME_IMPORT_COUNT
-    if len(channels) < count:
-        count = len(channels)
+    #handle no channels in follows
+    if channels == []:
+      bot.send_message(chat_id = update.message.chat_id,
+                       text = MESSAGE_ERR_NO_CHS)
+      return
 
-    #import up to 10 most viewed channels
-    for ind in range(count):
-        channel = str(channels[ind])
+    #filter already added channels
+    channels = [ch for ch in channels if ch not in usr_chs]
 
-        #handle existing channel
-        if channel in cur_user.get_channels():
-            continue
+    #handle no new channels to import
+    if channels == []:
+      bot.send_message(chat_id = update.message.chat_id,
+                       text = MESSAGE_ERR_NO_NEW)
+      return
 
-        #add channel to user's pool
-        cur_user.add_channel(channel)
+    chat_data["imp_channels"] = channels
+    chat_data["imp_id"] = 0
 
-        #add channel to
-        tw.add_channel(channel)
+    text = TWITCH_LINK % channels[0]
 
-        global db
-        db.sadd("chat_id:" + str(cur_user.chat_id),
-                channel)
-
-    logging.info(LOGGING_IMPORT_USER % (update.message.chat_id, username))
+    imp_keys = [[InlineKeyboardButton("Skip", callback_data = "skip"),
+                InlineKeyboardButton("%d/%d" % (1, len(channels)),
+                                       callback_data = "none"),
+                InlineKeyboardButton("Add", callback_data = "add")],
+                [InlineKeyboardButton("Import all (Up to "
+                                      + str(UNPRIME_IMPORT_COUNT) + ")",
+                                       callback_data = "all")],
+                [InlineKeyboardButton("Close", callback_data = "close")]]
+    keys_markup = InlineKeyboardMarkup(imp_keys)
 
     bot.send_message(chat_id = update.message.chat_id,
-                         text = MESSAGE_SUCCESS_IMPORT)
+                     text = text,
+                     reply_markup = keys_markup)
 
 def ch_info(bot, update, args, chat_data):
     '''
@@ -569,6 +577,7 @@ def live(bot, update, chat_data):
     if len(chat_data["live_channels"]) == 0:
         bot.send_message(chat_id = update.message.chat_id,
                          text = MESSAGE_NO_LIVE)
+        return
 
     chat_data["live_id"] = 0
     text = TWITCH_LINK % chat_data["live_channels"][0]
@@ -850,6 +859,119 @@ def keyboard_callback(bot, update, chat_data):
                                         reply_markup = keys_markup)
         return
 
+    global tw
+    global db
+    # - # ITER IMPORT CALLBACK # - #
+    if query.data == "add":
+        #get callback data
+        channels = chat_data["imp_channels"]
+        ind = chat_data["imp_id"]
+        channel = channels[ind]
+
+        cur_user = ClUs.user.get_by_id(query.message.chat_id)
+
+        #add channel to user's pool
+        #protect from touching ADD button multiple times
+        if channel not in cur_user.get_channels():
+          cur_user.add_channel(channel)
+
+          #add channel to update pool
+          tw.add_channel(channel)
+
+          db.sadd("chat_id:" + str(cur_user.chat_id),
+                  channel)
+
+          logging.info(LOGGING_NEW_CHANNEL % (channel, query.message.chat_id))
+
+        #if that was the last index
+        if ind >= (len(channels) - 1):
+          bot.delete_message(chat_id = query.message.chat_id,
+                       message_id = query.message.message_id)
+          bot.send_message(chat_id = query.message.chat_id,
+                           text = MESSAGE_SUCCESS_IMPORT)
+          return
+
+        chat_data["imp_id"] += 1
+        ind += 1
+        text = TWITCH_LINK % channels[ind]
+
+
+        imp_keys = [[InlineKeyboardButton("Skip", callback_data = "skip"),
+                InlineKeyboardButton("%d/%d" % (ind + 1, len(channels)),
+                                       callback_data = "none"),
+                InlineKeyboardButton("Add", callback_data = "add")],
+                [InlineKeyboardButton("Import all (Up to "
+                                      + str(UNPRIME_IMPORT_COUNT) + ")",
+                                      callback_data = "all")],
+                [InlineKeyboardButton("Close", callback_data = "close")]]
+        keys_markup = InlineKeyboardMarkup(imp_keys)
+
+        query.edit_message_text(text = text)
+        query.edit_message_reply_markup(reply_markup = keys_markup)
+        return
+
+    if query.data == "skip":
+        #get callback data
+        channels = chat_data["imp_channels"]
+        ind = chat_data["imp_id"]
+        channel = channels[ind]
+
+        #if that was the last index
+        if ind >= (len(channels) - 1):
+          bot.delete_message(chat_id = query.message.chat_id,
+                       message_id = query.message.message_id)
+          bot.send_message(chat_id = query.message.chat_id,
+                           text = MESSAGE_SUCCESS_IMPORT)
+          return
+
+        #move on to the next channel
+        chat_data["imp_id"] += 1
+        ind += 1
+        text = TWITCH_LINK % channels[ind]
+
+
+        imp_keys = [[InlineKeyboardButton("Skip", callback_data = "skip"),
+                InlineKeyboardButton("%d/%d" % (ind + 1, len(channels)),
+                                       callback_data = "none"),
+                InlineKeyboardButton("Add", callback_data = "add")],
+                [InlineKeyboardButton("Import all (Up to "
+                                      + str(UNPRIME_IMPORT_COUNT) + ")",
+                                      callback_data = "all")],
+                [InlineKeyboardButton("Close", callback_data = "close")]]
+        keys_markup = InlineKeyboardMarkup(imp_keys)
+
+        query.edit_message_text(text = text)
+        query.edit_message_reply_markup(reply_markup = keys_markup)
+        return
+
+    if query.data == "all":
+        #get callback data
+        channels = chat_data["imp_channels"]
+        ind = chat_data["imp_id"]
+
+        cur_user = ClUs.user.get_by_id(query.message.chat_id)
+        #import either the rest or up COUNT channels
+        for i in range(ind, min(ind + UNPRIME_IMPORT_COUNT, len(channels))):
+            channel = channels[i]
+
+            #add channel to user's pool
+            cur_user.add_channel(channel)
+
+            #add channel to update pool
+            tw.add_channel(channel)
+
+            db.sadd("chat_id:" + str(cur_user.chat_id),
+                    channel)
+
+            logging.info(LOGGING_NEW_CHANNEL % (channel, query.message.chat_id))
+
+        bot.delete_message(chat_id = query.message.chat_id,
+                     message_id = query.message.message_id)
+        bot.send_message(chat_id = query.message.chat_id,
+                         text = MESSAGE_SUCCESS_IMPORT)
+        return
+
+
     #handle undo button
     if query.data == "undo":
       bot.delete_message(chat_id = query.message.chat_id,
@@ -891,7 +1013,6 @@ def keyboard_callback(bot, update, chat_data):
         return
       return
 
-    global tw
     #handle undo all button
     if query.data == "undo_all":
       channels = chat_data["rem_channels"]
@@ -904,7 +1025,6 @@ def keyboard_callback(bot, update, chat_data):
         #add channel to overall pool
         tw.add_channel(channel)
 
-        global db
         db.sadd("chat_id:" + str(cur_user.chat_id),
                 channel)
       chat_data["channels"] = channels
@@ -1099,7 +1219,8 @@ if (__name__ == "__main__"):
     dispatcher.add_handler(list_handler)
 
     imp_handler = CommandHandler('import', import_st,
-                                 pass_args=True)
+                                 pass_args=True,
+                                 pass_chat_data = True)
     dispatcher.add_handler(imp_handler)
 
     info_handler = CommandHandler('info', ch_info,

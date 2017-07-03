@@ -53,7 +53,7 @@ class Twitch:
 
 
     #get user_id for one channel
-    def _update(self, channels, out):
+    def _ids(self, channels, out):
         #get id
         query = ','.join(channels)
         r_get = requests.get(TWAPI_ID_BY_NAME + query,
@@ -67,34 +67,8 @@ class Twitch:
             result.append(ch['_id'])
         out.put(result)
 
-    #process result of all updates
-    def _setch(self, channels):
-        #initial setup for all channels
-        for channel in channels:
-            self.ch_table[channel] = False
-
-        chan_chunk = list(self.chunks(channels,
-                                     TW_CHUNK_SIZE))
-
-        #multiprocessed channel id obtaining
-        out = mp.Queue()
-        updates = []
-        for chunk in chan_chunk:
-            p = mp.Process(target = self._update,
-                        args = (chunk, out,))
-            p.daemon = True
-            updates.append(p)
-
-        for update in updates:
-            update.start()
-
-        results = []
-        for update in updates:
-            update.join()
-            result = out.get(update)
-            #add result to results
-            results.extend(result)
-
+    #multiprocessing splitted queue
+    def _multip(self, target, results):
         #split in chunks of 100 elements
         chan_chunk = list(self.chunks(results,
                                  TW_CHUNK_SIZE))
@@ -104,7 +78,7 @@ class Twitch:
         updates = []
         data = []
         for chunk in chan_chunk:
-            p = mp.Process(target = self._process,
+            p = mp.Process(target = target,
                         args = (chunk, out))
             p.daemon = True
             updates.append(p)
@@ -116,6 +90,27 @@ class Twitch:
             update.join()
             chunk_data = out.get(update)
             data.extend(chunk_data)
+        return data
+
+    #process result of all updates
+    def _setch(self, channels):
+        #initial setup for all channels
+        for channel in channels:
+            self.ch_table[channel] = False
+
+        try:
+            results = self._multip(self._ids,
+                                   channels)
+        except Exception as e:
+            logging.warning(LOGGING_SETUP_FAILURE, str(e))
+            return -1
+
+        try:
+            data = self._multip(self._process,
+                                results)
+        except Exception as e:
+            logging.warning(LOGGING_SETUP_FAILURE, str(e))
+            return -1
 
         #set True if stream is live
         for stream in data:
@@ -155,102 +150,72 @@ class Twitch:
         #waitlist of just-went-off channels
         waitlist = set()
         while not self._stop:
+            timer = time.time()
+
             try:
-                out = mp.Queue()
-                updates = []
-                timer = time.time()
-
-                #split in chunks of CHUNK_SIZE elements
-                chan_chunk = list(self.chunks(self.channels,
-                                         TW_CHUNK_SIZE))
-
-                for chunk in chan_chunk:
-                    p = mp.Process(target = self._update,
-                                args = (chunk, out,))
-                    p.daemon = True
-                    updates.append(p)
-
-                for update in updates:
-                    update.start()
-
-                results = []
-                for update in updates:
-                    update.join()
-                    result = out.get(update)
-                    #add result to results
-                    results.extend(result)
-
-                #split in chunks of CHUNK_SIZE elements
-                chan_chunk = list(self.chunks(results,
-                                         TW_CHUNK_SIZE))
-                out = mp.Queue()
-                updates = []
-                data = []
-                for chunk in chan_chunk:
-                    p = mp.Process(target = self._process,
-                                args = (chunk, out))
-                    p.daemon = True
-                    updates.append(p)
-
-                for update in updates:
-                    update.start()
-
-                for update in updates:
-                    update.join()
-                    chunk_data = out.get(update)
-                    data.extend(chunk_data)
-
-                #set list of currently online channels
-                #waitlisted channels do not count since they
-                #are already tracked
-                online_list = []
-                for channel in self.ch_table.keys():
-                    if (self.ch_table[channel] == True and
-                                channel not in waitlist):
-                        online_list.append(channel)
-
-                #processing data obtained
-                for stream in data:
-                    channel = str(stream["channel"]["name"]).lower()
-                    #remove stream from online list
-                    if channel in online_list:
-                        online_list.remove(channel)
-
-                    #if it was in waitlist, but then became online,
-                    #remove it from the waitlist
-                    if channel in waitlist:
-                        waitlist.remove(channel)
-
-                    #if it used to be false, then we need
-                    #to notify all users subscribed for this
-                    #channel
-                    if self.ch_table[channel] == False:
-                        logging.info(LOGGING_LIVE % channel)
-                        ClUs.user.notify(channel)
-
-                    self.ch_table[channel] = True
-
-                for channel in waitlist:
-                    logging.info(LOGGING_OFFLINE % channel)
-                    self.ch_table[channel] = False
-
-                waitlist = set()
-
-                for channel in online_list:
-                    waitlist.add(channel)
-
-                #data collection
-                self._data["Ticks"] += 1
-                timer = time.time() - timer
-                self._data["AVG Tick Time"] += timer
-                self._data["Time up"] += timer
-                self._data["Time up"] += delay
-
-                time.sleep(delay)
-            #handle Telegram request errors
+                results = self._multip(self._ids,
+                                       self.channels)
             except Exception as e:
-                logging.info(str(e))
+                logging.warning(LOGGING_UPDATE_FAILURE, str(e))
                 time.sleep(delay)
+                continue
+
+            try:
+                data = self._multip(self._process,
+                                    results)
+            except Exception as e:
+                logging.warning(LOGGING_UPDATE_FAILURE, str(e))
+                time.sleep(delay)
+                continue
+
+            #set list of currently online channels
+            #waitlisted channels do not count since they
+            #are already tracked
+            online_list = []
+            for channel in self.ch_table.keys():
+                if (self.ch_table[channel] == True and
+                            channel not in waitlist):
+                    online_list.append(channel)
+
+            #processing data obtained
+            for stream in data:
+                channel = str(stream["channel"]["name"]).lower()
+                #remove stream from online list
+                if channel in online_list:
+                    online_list.remove(channel)
+
+                #if it was in waitlist, but then became online,
+                #remove it from the waitlist
+                if channel in waitlist:
+                    waitlist.remove(channel)
+
+                #if it used to be false, then we need
+                #to notify all users subscribed for this
+                #channel
+                if self.ch_table[channel] == False:
+                    logging.info(LOGGING_LIVE % channel)
+                    ClUs.user.notify(channel)
+
+                self.ch_table[channel] = True
+
+            for channel in waitlist:
+                logging.info(LOGGING_OFFLINE % channel)
+                self.ch_table[channel] = False
+
+            waitlist = set()
+
+            for channel in online_list:
+                waitlist.add(channel)
+
+            #data collection
+            self._data["Ticks"] += 1
+            timer = time.time() - timer
+            self._data["AVG Tick Time"] += timer
+            self._data["Time up"] += timer
+            self._data["Time up"] += delay
+
+            time.sleep(delay)
+
 
     #add channel to list
     def add_channel(self, channel):
@@ -345,8 +310,9 @@ class Twitch:
                              headers = self.headers)
         data = r_get.json()
         channels = []
+        #I could do it fancier but dont want to mess it up lol
         for chan_data in data["follows"]:
-            channels.append(chan_data["channel"]["name"])
+            channels.append(str(chan_data["channel"]["name"]))
         return channels
 
 

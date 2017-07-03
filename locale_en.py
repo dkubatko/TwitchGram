@@ -13,7 +13,9 @@ MESSAGE_ERR_NO_CH = ("You are not signed for"
                      " this channel's updates")
 MESSAGE_ERR_NO_CMD = ("I don't have such command in use :(\n"
                       "Press <Help> to get the list of available commands")
-
+MESSAGE_ERR_NO_CHS = ("This user doesn't have any follows.")
+MESSAGE_ERR_NO_NEW = ("You have all channels already imported"
+                      " from this account!")
 #help messages
 MESSAGE_HELP_UPDATE = ("Syntax to use update is"
                        " /update <channel>")
