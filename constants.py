@@ -34,8 +34,11 @@ LOGGING_IMPORT_USER = ("Imported info in chat %s"
                        " for user %s")
 LOGGING_LOADING_DB = ("Loading data from db...")
 
+LOGGING_RESTART = ("Bot is restarting by %d")
+
 LOGGING_SETUP_FAILURE = ("Failed to set up due to %s")
 LOGGING_UPDATE_FAILURE = ("Failure while update: %s")
+LOGGING_ACCESS_FAILURE = ("Unauthorized access denied for %d.")
 
 LOGGING_LIVE = ("%s went live")
 LOGGING_OFFLINE = ("%s went offline")
@@ -53,9 +56,7 @@ TWAPI_CHANNEL = "https://api.twitch.tv/kraken/channels/"
 
 TW_CHUNK_SIZE = 20
 TW_UPDATE_DELAY = 10
-
-TW_RETRY_DELAY = 2
-TW_RETRY_COUNT = 5
+TW_CD = 300
 
 TW_LIVE = '\xF0\x9F\x94\xB4'
 

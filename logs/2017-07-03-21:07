@@ -1,0 +1,45 @@
+2017-07-03 21:07:09,764 - root - INFO - Loading data from db...
+2017-07-03 21:07:09,769 - root - INFO - Done.
+2017-07-03 21:07:09,769 - root - INFO - Starting setup...
+2017-07-03 21:07:09,769 - root - INFO - Setting up channel list
+2017-07-03 21:07:09,769 - root - INFO - Done.
+2017-07-03 21:07:09,769 - root - INFO - Updating info for channels
+2017-07-03 21:07:10,315 - root - INFO - summit1g went live
+2017-07-03 21:07:10,316 - root - INFO - mehvsgame went live
+2017-07-03 21:07:10,316 - root - INFO - ratsmah went live
+2017-07-03 21:07:10,316 - root - INFO - elajjaz went live
+2017-07-03 21:07:10,316 - root - INFO - goldensplit went live
+2017-07-03 21:07:10,316 - root - INFO - followkudes went live
+2017-07-03 21:07:10,316 - root - INFO - ster went live
+2017-07-03 21:07:10,316 - root - INFO - bobross went live
+2017-07-03 21:07:10,316 - root - INFO - denly_denly went live
+2017-07-03 21:07:10,316 - root - INFO - headwaygames went live
+2017-07-03 21:07:10,316 - root - INFO - jeffersontv2 went live
+2017-07-03 21:07:10,316 - root - INFO - alohadancetv went live
+2017-07-03 21:07:10,316 - root - INFO - cahchec went live
+2017-07-03 21:07:10,317 - root - INFO - naiman_hs went live
+2017-07-03 21:07:10,317 - root - INFO - dizzydizaster went live
+2017-07-03 21:07:10,317 - root - INFO - orkpod went live
+2017-07-03 21:07:10,317 - root - INFO - neonomi went live
+2017-07-03 21:07:10,317 - root - INFO - Done.
+2017-07-03 21:27:05,092 - root - INFO - elajjaz went offline
+2017-07-03 21:31:09,940 - root - INFO - denly_denly went offline
+2017-07-03 21:34:44,195 - root - INFO - jeffersontv2 went offline
+2017-07-03 22:15:04,687 - root - INFO - naiman_hs went offline
+2017-07-03 22:36:30,227 - root - INFO - alohadancetv went offline
+2017-07-03 22:40:35,501 - root - INFO - followkudes went offline
+2017-07-03 23:00:29,316 - root - INFO - ster went offline
+2017-07-03 23:02:31,758 - root - INFO - neonomi went offline
+2017-07-03 23:25:30,536 - root - INFO - qsnake went live
+2017-07-03 23:33:40,811 - root - INFO - orkpod went offline
+2017-07-03 23:34:18,826 - telegram.ext.updater - ERROR - Error while getting Updates: Timed out
+2017-07-03 23:34:42,141 - root - INFO - dizzydizaster went offline
+2017-07-03 23:45:24,799 - root - INFO - headwaygames went offline
+2017-07-03 23:46:25,743 - root - WARNING - Failure while update: HTTPSConnectionPool(host='api.twitch.tv', port=443): Max retries exceeded with url: /kraken/streams/?limit=100&channel=https://api.twitch.tv/kraken/streams/?limit=100&channel=22877031,23257020 (Caused by NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x7fc020dbd350>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+2017-07-04 07:03:13,482 - root - INFO - * * * * * * * * * * * * * * * * 
+2017-07-04 07:03:13,483 - root - INFO - Ticks: 312
+2017-07-04 07:03:13,483 - root - INFO - Time up: 9547.8820858
+2017-07-04 07:03:13,484 - root - INFO - AVG Tick Time: 0.602186172436
+2017-07-04 07:03:13,484 - root - INFO - AVG Sort Time: 1.11897786458e-05
+2017-07-04 07:03:13,484 - root - INFO - Sorts #: 15
+2017-07-04 07:03:13,484 - root - INFO - Users added: 15

@@ -78,8 +78,6 @@ class user:
                     tttbot.notify_live(usr.chat_id, channel,
                                    cls.bot)
                 except Exception as e:
-                    logging.info(str(e))
-                    us = cls.get_by_id(update.message.chat_id)
-                    if us != None:
-                        cls.remove_user(us)
+                    logging.warning(str(e))
+                    cls.remove_user(usr)
 

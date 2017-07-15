@@ -17,6 +17,8 @@ class Twitch:
     _stop = False
     _weights = {}
 
+    _skip = False
+
     def __init__(self, client_id, users = []):
         self.headers = {'Accept': TWAPI_HEADER,
                         'Client-ID': client_id }
@@ -56,16 +58,44 @@ class Twitch:
     def _ids(self, channels, out):
         #get id
         query = ','.join(channels)
-        r_get = requests.get(TWAPI_ID_BY_NAME + query,
+        data = {"users":[]}
+        try:
+            r_get = requests.get(TWAPI_ID_BY_NAME + query,
                          headers = self.headers)
-        data = r_get.json()
+            #fetch users
+            data = r_get.json()["users"]
+        #catch connection exception and skip the cycle
+        except Exception as e:
+            logging.warning(LOGGING_UPDATE_FAILURE, str(e))
+            self._skip = True
 
         #get data
         result = []
         #get all ids
-        for ch in data["users"]:
+        for ch in data:
             result.append(ch['_id'])
         out.put(result)
+
+    #process ids to obtain stream data
+    def _process(self, res, out):
+        query = ','.join(res)
+        query = TWAPI_STREAMS + query
+        data = {}
+        #get data
+        try:
+            r_get = requests.get(TWAPI_STREAMS + query,
+                                 headers = self.headers)
+            data = r_get.json()
+        #catch connection exception and skip the cycle
+        except Exception as e:
+            logging.warning(LOGGING_UPDATE_FAILURE, str(e))
+            self._skip = True
+
+        if "streams" in data.keys():
+            data = data["streams"]
+        else:
+            data = []
+        out.put(data)
 
     #multiprocessing splitted queue
     def _multip(self, target, results):
@@ -98,39 +128,24 @@ class Twitch:
         for channel in channels:
             self.ch_table[channel] = False
 
-        try:
-            results = self._multip(self._ids,
-                                   channels)
-        except Exception as e:
-            logging.warning(LOGGING_SETUP_FAILURE, str(e))
-            return -1
+        results = self._multip(self._ids,
+                                channels)
+        if self._skip:
+            self._skip = False
+            return
 
-        try:
-            data = self._multip(self._process,
+
+        data = self._multip(self._process,
                                 results)
-        except Exception as e:
-            logging.warning(LOGGING_SETUP_FAILURE, str(e))
-            return -1
+        if self._skip:
+            self._skip = False
+            return
 
         #set True if stream is live
         for stream in data:
             channel = str(stream["channel"]["name"]).lower()
             logging.info(LOGGING_LIVE % channel)
             self.ch_table[channel] = True
-
-    #process ids to obtain stream data
-    def _process(self, res, out):
-        query = ','.join(res)
-        query = TWAPI_STREAMS + query
-        #get data
-        r_get = requests.get(TWAPI_STREAMS + query,
-                             headers = self.headers)
-        data = r_get.json()
-        if "streams" in data.keys():
-            data = data["streams"]
-        else:
-            data = []
-        out.put(data)
 
     # EXPLICIT PUBLIC METHODS #
     def stop(self):
@@ -148,23 +163,22 @@ class Twitch:
         self._data["Time up"] = 0
 
         #waitlist of just-went-off channels
-        waitlist = set()
+        waitlist = {}
         while not self._stop:
             timer = time.time()
 
-            try:
-                results = self._multip(self._ids,
-                                       self.channels)
-            except Exception as e:
-                logging.warning(LOGGING_UPDATE_FAILURE, str(e))
+
+            results = self._multip(self._ids,
+                                  self.channels)
+            if self._skip:
+                self._skip = False
                 time.sleep(delay)
                 continue
 
-            try:
-                data = self._multip(self._process,
+            data = self._multip(self._process,
                                     results)
-            except Exception as e:
-                logging.warning(LOGGING_UPDATE_FAILURE, str(e))
+            if self._skip:
+                self._skip = False
                 time.sleep(delay)
                 continue
 
@@ -174,7 +188,7 @@ class Twitch:
             online_list = []
             for channel in self.ch_table.keys():
                 if (self.ch_table[channel] == True and
-                            channel not in waitlist):
+                            channel not in waitlist.keys()):
                     online_list.append(channel)
 
             #processing data obtained
@@ -186,8 +200,8 @@ class Twitch:
 
                 #if it was in waitlist, but then became online,
                 #remove it from the waitlist
-                if channel in waitlist:
-                    waitlist.remove(channel)
+                if channel in waitlist.keys():
+                    waitlist.pop(channel, None)
 
                 #if it used to be false, then we need
                 #to notify all users subscribed for this
@@ -198,18 +212,24 @@ class Twitch:
 
                 self.ch_table[channel] = True
 
-            for channel in waitlist:
-                logging.info(LOGGING_OFFLINE % channel)
-                self.ch_table[channel] = False
+            timer = time.time() - timer
 
-            waitlist = set()
+            #remove from TW_CD waiting if offline
+            for channel in waitlist.keys():
+                waitlist[channel] -= (timer + delay)
+                if waitlist[channel] <= 0:
+                    logging.info(LOGGING_OFFLINE % channel)
+                    self.ch_table[channel] = False
+                    waitlist.pop(channel, None)
 
             for channel in online_list:
-                waitlist.add(channel)
+                waitlist[channel] = TW_CD
+
+
+
 
             #data collection
             self._data["Ticks"] += 1
-            timer = time.time() - timer
             self._data["AVG Tick Time"] += timer
             self._data["Time up"] += timer
             self._data["Time up"] += delay

@@ -12,6 +12,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import random
 import logging
 import datetime
+import sys
+import os
+import time
+from functools import wraps
 from threading import Thread
 from constants import *
 import classUser as ClUs
@@ -35,6 +39,8 @@ else:
 if args.delay != None:
     TW_UPDATE_DELAY = args.delay
 
+ADMIN_LIST = []
+
 def init():
     """
     Initializes filename accrding to current date.
@@ -48,7 +54,7 @@ def init():
     """
     #setting up logging
     dt = datetime.datetime.now()
-    fn = dt.strftime(DAYTIME_STRING)
+    fn = dt.strftime(DAYTIME_STRING) + ".log"
     logging.basicConfig(filename="logs/" + fn, filemode = 'w',
      format=LOGGING_FORMAT, level=logging.INFO)
 
@@ -88,6 +94,11 @@ def load_data(db):
         map(str.lower, channels)
         usr = ClUs.user(chat_id, channels = channels)
         ClUs.user.add(usr)
+
+    admins = list(db.smembers("admins"))
+    global ADMIN_LIST
+    ADMIN_LIST.extend(admins)
+
     logging.info(LOGGING_DONE)
 
 #error catching
@@ -105,7 +116,35 @@ def error_callback(bot, update, error):
     except TelegramError:
         print "Error"
 
+#restricting wrapper
+def restricted(func):
+    @wraps(func)
+    def wrapped(bot, update, *args, **kwargs):
+        chat_id = str(update.message.chat_id)
+        if chat_id not in ADMIN_LIST:
+            logging.warning(LOGGING_ACCESS_FAILURE, chat_id)
+            return
+        return func(bot, update, *args, **kwargs)
+    return wrapped
+
 # TELEGRAM HANDLER FUNCTIONS #
+def get_id(bot, update):
+  '''
+  Simply returns chat id of a user
+  '''
+  bot.send_message(chat_id = update.message.chat_id,
+                   text = update.message.chat_id)
+
+@restricted
+def restart(bot, update):
+    '''
+    Restarts the bot
+    '''
+    logging.info(LOGGING_RESTART, update.message.chat_id)
+    exit_handler()
+    bot.send_message(update.message.chat_id, "Bot is restarting...")
+    time.sleep(0.2)
+    os.execl(sys.executable, sys.executable, *sys.argv)
 
 def message(bot, update):
     """
@@ -1211,6 +1250,12 @@ if (__name__ == "__main__"):
                                   pass_args = True,
                                   pass_chat_data = True)
     dispatcher.add_handler(rem_handler)
+
+    id_handler = CommandHandler('id', get_id)
+    dispatcher.add_handler(id_handler)
+
+    res_handler = CommandHandler('restart', restart)
+    dispatcher.add_handler(res_handler)
 
     help_handler = CommandHandler('help',  help_com)
     dispatcher.add_handler(help_handler)

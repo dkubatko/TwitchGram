@@ -1,0 +1,31 @@
+2017-07-03 21:06:43,607 - root - INFO - Loading data from db...
+2017-07-03 21:06:43,612 - root - INFO - Done.
+2017-07-03 21:06:43,612 - root - INFO - Starting setup...
+2017-07-03 21:06:43,612 - root - INFO - Setting up channel list
+2017-07-03 21:06:43,612 - root - INFO - Done.
+2017-07-03 21:06:43,612 - root - INFO - Updating info for channels
+2017-07-03 21:06:44,275 - root - INFO - cahchec went live
+2017-07-03 21:06:44,275 - root - INFO - naiman_hs went live
+2017-07-03 21:06:44,275 - root - INFO - dizzydizaster went live
+2017-07-03 21:06:44,275 - root - INFO - orkpod went live
+2017-07-03 21:06:44,275 - root - INFO - neonomi went live
+2017-07-03 21:06:44,276 - root - INFO - alohadancetv went live
+2017-07-03 21:06:44,276 - root - INFO - ster went live
+2017-07-03 21:06:44,276 - root - INFO - headwaygames went live
+2017-07-03 21:06:44,276 - root - INFO - jeffersontv2 went live
+2017-07-03 21:06:44,276 - root - INFO - summit1g went live
+2017-07-03 21:06:44,276 - root - INFO - mehvsgame went live
+2017-07-03 21:06:44,276 - root - INFO - ratsmah went live
+2017-07-03 21:06:44,276 - root - INFO - elajjaz went live
+2017-07-03 21:06:44,276 - root - INFO - goldensplit went live
+2017-07-03 21:06:44,276 - root - INFO - followkudes went live
+2017-07-03 21:06:44,276 - root - INFO - bobross went live
+2017-07-03 21:06:44,277 - root - INFO - denly_denly went live
+2017-07-03 21:06:44,277 - root - INFO - Done.
+2017-07-03 21:07:09,190 - root - INFO - * * * * * * * * * * * * * * * * 
+2017-07-03 21:07:09,192 - root - INFO - Ticks: 1
+2017-07-03 21:07:09,192 - root - INFO - Time up: 30.5793139935
+2017-07-03 21:07:09,192 - root - INFO - AVG Tick Time: 0.579313993454
+2017-07-03 21:07:09,192 - root - INFO - AVG Sort Time: 1.17778778076e-05
+2017-07-03 21:07:09,193 - root - INFO - Sorts #: 15
+2017-07-03 21:07:09,193 - root - INFO - Users added: 15
