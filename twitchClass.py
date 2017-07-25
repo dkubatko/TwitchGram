@@ -18,6 +18,7 @@ class Twitch:
     _weights = {}
 
     _skip = False
+    _errors = []
 
     def __init__(self, client_id, users = []):
         self.headers = {'Accept': TWAPI_HEADER,
@@ -66,15 +67,26 @@ class Twitch:
             data = r_get.json()["users"]
         #catch connection exception and skip the cycle
         except Exception as e:
-            logging.warning(LOGGING_UPDATE_FAILURE, str(e))
+            self._errors.append(e)
             self._skip = True
+            out.put([])
+            return
 
         #get data
         result = []
         #get all ids
-        for ch in data:
-            result.append(ch['_id'])
+        try:
+            for ch in data:
+                result.append(ch["_id"])
+        #if invalid response
+        except Exception as e:
+            self._errors.append(e)
+            self._skip = True
+            out.put([])
+            return
+
         out.put(result)
+        return
 
     #process ids to obtain stream data
     def _process(self, res, out):
@@ -88,16 +100,21 @@ class Twitch:
             data = r_get.json()
         #catch connection exception and skip the cycle
         except Exception as e:
-            logging.warning(LOGGING_UPDATE_FAILURE, str(e))
+            self._errors.append(e)
             self._skip = True
+            out.put([])
+            return
 
         if "streams" in data.keys():
             data = data["streams"]
         else:
             data = []
+
         out.put(data)
+        return
 
     #multiprocessing splitted queue
+    #for target func and given results
     def _multip(self, target, results):
         #split in chunks of 100 elements
         chan_chunk = list(self.chunks(results,
@@ -120,6 +137,7 @@ class Twitch:
             update.join()
             chunk_data = out.get(update)
             data.extend(chunk_data)
+
         return data
 
     #process result of all updates
@@ -147,6 +165,8 @@ class Twitch:
             logging.info(LOGGING_LIVE % channel)
             self.ch_table[channel] = True
 
+        return
+
     # EXPLICIT PUBLIC METHODS #
     def stop(self):
         self._stop = True
@@ -167,16 +187,22 @@ class Twitch:
         while not self._stop:
             timer = time.time()
 
-
             results = self._multip(self._ids,
                                   self.channels)
             if self._skip:
+                logging.warning(LOGGING_CYCLE_FAILURE,
+                                str(self._errors.reverse[0]),
+                                len(self._errors))
+                self._errors = []
                 self._skip = False
                 time.sleep(delay)
                 continue
 
             data = self._multip(self._process,
                                     results)
+
+            #if error occurs in processes we need to skip
+            #one cycle
             if self._skip:
                 self._skip = False
                 time.sleep(delay)

@@ -36,6 +36,8 @@ LOGGING_LOADING_DB = ("Loading data from db...")
 
 LOGGING_RESTART = ("Bot is restarting by %d")
 
+LOGGING_CYCLE_FAILURE = ("Cycle update failure. Most recent error"
+                         " %s in %d processes")
 LOGGING_SETUP_FAILURE = ("Failed to set up due to %s")
 LOGGING_UPDATE_FAILURE = ("Failure while update: %s")
 LOGGING_ACCESS_FAILURE = ("Unauthorized access denied for %d.")
